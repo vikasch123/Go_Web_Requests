@@ -3,6 +3,9 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"io"
+	"log"
+	"github.com/gorilla/mux"
 )
 
 
@@ -18,7 +21,7 @@ var employees = []Employee{
 	{Name:"Jai",ID:"341",Salary:"1200000"},
 }
 
-
+// Get /employees 
 func getEmployee(w http.ResponseWriter, r *http.Request){
 	w.Header().Set("Content-type","application/json")
 
@@ -26,9 +29,47 @@ func getEmployee(w http.ResponseWriter, r *http.Request){
 
 }
 
+// Get /employees/{id}
+
+func getEmployeeByID(w http.ResponseWriter, r *http.Request){
+	w.Header().Set("Content-type","application/json")
+	param := mux.Vars(r)
+
+	for _,emp := range employees{
+		if emp.ID==param["id"]{
+			json.NewEncoder(w).Encode(emp)
+			return
+		}
+	}
+	http.Error(w,"Employee not found",http.StatusNotFound)
+
+}
+
+// Post /employees 
+
+func createEmployee(w http.ResponseWriter ,  r * http.Request){
+	w.Header().Set("Content-type","application/json")
+	body,err := io.ReadAll(r.Body)
+	if err!=nil{
+		http.Error(w,"Invalid body",http.StatusBadRequest)
+		return 
+	}
+
+	var newemp Employee
+	json.Unmarshal(body,&newemp)
+	employees=append(employees,newemp)
+	json.NewEncoder(w).Encode(newemp)
+}
+
+
+
 func main(){
-	http.HandleFunc("/employees",getEmployee)
-	http.ListenAndServe(":8080",nil)
+	router:=mux.NewRouter()
+	router.HandleFunc("/employees",getEmployee).Methods("GET")
+	router.HandleFunc("/employees/{id}",getEmployeeByID).Methods("GET")
+	router.HandleFunc("/employees",createEmployee).Methods("POST")
+	log.Println("Server started at localhost:8080")
+	log.Fatal(http.ListenAndServe(":8080",router))
 
 
 }

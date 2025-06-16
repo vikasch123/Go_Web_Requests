@@ -61,6 +61,28 @@ func createEmployee(w http.ResponseWriter ,  r * http.Request){
 	json.NewEncoder(w).Encode(newemp)
 }
 
+// Put /employees/{id}
+
+func updateEmployeeByID(w http.ResponseWriter, r * http.Request){
+	w.Header().Set("Content-type","application/json")
+	params := mux.Vars(r)
+	body,_:=io.ReadAll(r.Body)
+
+	var updatedEmp Employee
+	json.Unmarshal(body,&updatedEmp)
+
+	for i,emp:= range employees{
+		if emp.ID==params["id"]{
+employees[i].Name = updatedEmp.Name
+employees[i].Salary = updatedEmp.Salary
+	json.NewEncoder(w).Encode(employees[i])		
+			return 
+		}
+
+	}
+	http.Error(w, "Employee not found", http.StatusNotFound)
+}
+
 
 
 func main(){
@@ -68,6 +90,7 @@ func main(){
 	router.HandleFunc("/employees",getEmployee).Methods("GET")
 	router.HandleFunc("/employees/{id}",getEmployeeByID).Methods("GET")
 	router.HandleFunc("/employees",createEmployee).Methods("POST")
+	router.HandleFunc("/employees/{id}",updateEmployeeByID).Methods("PUT")
 	log.Println("Server started at localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080",router))
 
